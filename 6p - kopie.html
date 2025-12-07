@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>6 P's van de marketingmix - ECO</title>
+  <style>
+    :root{
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      color: #111;
+      background: #f7f7fb;
+    }
+    body{
+      margin:0;
+      padding:24px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      min-height:100vh;
+    }
+    .card{
+      width:100%;
+      max-width:720px;
+      background:white;
+      border-radius:12px;
+      box-shadow:0 6px 24px rgba(0,0,0,0.08);
+      padding:22px;
+    }
+    h1{margin:0 0 8px;font-size:20px}
+    p{margin:0 0 16px;color:#444}
+    .controls{
+      display:flex;
+      gap:8px;
+      margin-bottom:14px;
+    }
+    input[type="text"]{
+      flex:1;
+      padding:10px 12px;
+      border-radius:8px;
+      border:1px solid #ddd;
+      font-size:15px;
+    }
+    button{
+      padding:10px 14px;
+      border-radius:8px;
+      border:0;
+      background:#2563eb;
+      color:white;
+      font-weight:600;
+      cursor:pointer;
+    }
+    button.secondary{
+      background:#e6e9ef;
+      color:#111;
+      font-weight:600;
+    }
+    ul{
+      list-style:none;
+      padding:0;
+      margin:0;
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:8px;
+    }
+    li{
+      padding:10px 12px;
+      border-radius:8px;
+      border:1px solid #eee;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      background:#fafaff;
+    }
+    .ok{color:green;font-weight:700}
+    .not{color:#999}
+    .all-done{
+      margin-top:14px;
+      padding:10px 12px;
+      border-radius:8px;
+      background:linear-gradient(90deg,#ecfccb,#bbf7d0);
+      color:#064e3b;
+      font-weight:700;
+      display:none;
+    }
+    .hint{margin-top:10px;color:#666;font-size:13px}
+    @media (max-width:560px){
+      ul{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+  <main class="card" role="main" aria-labelledby="title">
+    <h1 id="title">6 P's van de marketingmix — ECO</h1>
+    <p>Typ één van de 6 P's (in willekeurige volgorde). Als hij goed is, verschijnt 'OK'.</p>
+
+    <div class="controls">
+      <label for="input" class="sr-only"></label>
+      <input id="input" type="text" placeholder="Typ bijv. productbeleid" autocomplete="off" />
+      <button id="submit">Controleer</button>
+      <button id="clear" class="secondary">Reset</button>
+    </div>
+
+    <ul id="list" aria-live="polite">
+      <li data-key="productbeleid"><span>Productbeleid</span><span class="status not">—</span></li>
+      <li data-key="prijsbeleid"><span>Prijsbeleid</span><span class="status not">—</span></li>
+      <li data-key="plaatsbeleid"><span>Plaatsbeleid</span><span class="status not">—</span></li>
+      <li data-key="promotiebeleid"><span>Promotiebeleid</span><span class="status not">—</span></li>
+      <li data-key="personeelsbeleid"><span>Personeelsbeleid</span><span class="status not">—</span></li>
+      <li data-key="presentatiebeleid"><span>Presentatiebeleid</span><span class="status not">—</span></li>
+    </ul>
+
+    <div class="all-done" id="done">Goed gedaan! Je hebt alle 6 P's gevonden.</div>
+    <div class="hint">Tip: hoofdletters en spaties maken niet uit.</div>
+  </main>
+
+  <script>
+    (function(){
+      const answers = [
+        "productbeleid",
+        "prijsbeleid",
+        "plaatsbeleid",
+        "promotiebeleid",
+        "personeelsbeleid",
+        "presentatiebeleid"
+      ];
+
+      // State: which ones are correct
+      const state = {};
+      answers.forEach(a => state[a] = false);
+
+      const input = document.getElementById("input");
+      const submit = document.getElementById("submit");
+      const clear = document.getElementById("clear");
+      const list = document.getElementById("list");
+      const done = document.getElementById("done");
+
+      function normalize(s){
+        return (s||"").toLowerCase().replace(/\s+/g,"").replace(/[^a-z\u00C0-\u017F]/g,"");
+      }
+
+      function updateList(){
+        let allTrue = true;
+        for(const li of list.children){
+          const key = li.getAttribute("data-key");
+          const status = li.querySelector(".status");
+          if(state[key]){
+            status.textContent = "OK";
+            status.classList.remove("not");
+            status.classList.add("ok");
+          } else {
+            status.textContent = "—";
+            status.classList.remove("ok");
+            status.classList.add("not");
+            allTrue = false;
+          }
+        }
+        done.style.display = allTrue ? "block" : "none";
+      }
+
+      function checkAnswer(raw){
+        const norm = normalize(raw);
+        if(!norm) return;
+        // try exact matches first
+        let found = false;
+        for(const a of answers){
+          if(normalize(a) === norm){
+            state[a] = true;
+            found = true;
+            break;
+          }
+        }
+        // if not found, try matches that include 'beleid' omitted by user
+        if(!found){
+          for(const a of answers){
+            if(normalize(a).endsWith("beleid") && normalize(a).replace("beleid","") === norm){
+              state[a] = true;
+              found = true;
+              break;
+            }
+          }
+        }
+        updateList();
+      }
+
+      submit.addEventListener("click", () => {
+        checkAnswer(input.value);
+        input.value = "";
+        input.focus();
+      });
+
+      input.addEventListener("keydown", (e)=>{
+        if(e.key === "Enter"){
+          e.preventDefault();
+          submit.click();
+        }
+      });
+
+      clear.addEventListener("click", ()=>{
+        for(const a of answers) state[a] = false;
+        updateList();
+        input.value = "";
+        input.focus();
+      });
+
+      // initialize
+      updateList();
+      input.focus();
+    })();
+  </script>
+</body>
+</html>
